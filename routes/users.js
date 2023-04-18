@@ -37,6 +37,21 @@ router.get('/logout', (req, res)=> {
     res.redirect('/login')
 })
 
+router.get('/reset/:token', (req,res)=> {
+    User.findOne({resetPasswordToken: req.params.token, resetPasswordExpires : {$gt : Date.now()}})
+        .then(user =>{
+            if(!user) {
+                req.flash('error_msg', 'Password reset token is invalid or has expired');
+                res.redirect('/forgot')
+            }
+            res.render('newpassword', {token : req.params.token});
+        })
+        .catch(err => {
+            req.flash('error_msg', 'ERROR:' +err);
+            res.redirect('/forgot')
+        });
+});
+
 //Post routes
 
 router.post('/login', passport.authenticate('local', {
@@ -65,6 +80,7 @@ router.post('/signup', (req, res)=> {
 });
 
 // Routes to handle forgot password
+
 router.post('/forgot' , (req, res, next)=> {
     let recoveryPassword = '';
     async.waterfall([
