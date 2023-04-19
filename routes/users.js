@@ -32,7 +32,7 @@ router.get('/forgot', (req, res)=>{
     res.render('forgot')
 });
 
-router.get('/logout', (req, res)=> {
+router.get('/logout', isAuthenticatedUser, (req, res)=> {
     req.logOut();
     req.flash('success_msg', 'You have been logged out.');
     res.redirect('/login')
@@ -52,6 +52,10 @@ router.get('/reset/:token', (req,res)=> {
             res.redirect('/forgot')
         });
 });
+
+router.get('/passwordd/change', isAuthenticatedUser,(req, res)=> {
+    res.render('changepassword');
+})
 
 //Post routes
 
@@ -80,6 +84,27 @@ router.post('/signup', (req, res)=> {
     }); 
 });
 
+router.post('/password/change', (req, res)=> {
+    if(req.body.password !== req.body.confirmpassword) {
+        req.flash('error_msg', "Password doesn't match. try again")
+        return res.redirect('/password/change');
+    }
+
+    User.findOne({email : req.user.email})
+        .then(user => {
+            user.setPassword(req.body.password, err=>{
+                user.save()
+                    .then(user => {
+                        req.flash('success_msg', 'Password changed successfully');
+                        res.redirect('/dashboard');
+                    })
+                    .catch(err => {
+                        req.flash('error_msg', 'ERROR:' +err)
+                        res.redirect('/password/change');
+                    });
+            })
+        })
+})
 // Routes to handle forgot password
 
 router.post('/forgot' , (req, res, next)=> {
